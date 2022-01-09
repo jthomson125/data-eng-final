@@ -43,16 +43,16 @@ def run():
     )
 
     with beam.Pipeline(runner="DataflowRunner", options=opt) as pipeline:
-        # data1 = pipeline | "ReadFromBigQuery1" >> beam.io.ReadFromBigQuery(
-        #     query=
-        #     """
-        #     SELECT customers.CUST_TIER_CODE AS cust_tier_code, product_views.SKU AS sku, COUNT(DISTINCT(product_views.EVENT_TM)) AS total_no_of_product_views
-        #     FROM `york-cdf-start.final_input_data.customers` AS customers
-        #     JOIN `york-cdf-start.final_input_data.product_views` AS product_views ON (customers.CUSTOMER_ID = product_views.CUSTOMER_ID)
-        #     GROUP BY customers.CUST_TIER_CODE, product_views.SKU
-        #     """,
-        #     use_standard_sql=True
-        # )
+        data1 = pipeline | "ReadFromBigQuery1" >> beam.io.ReadFromBigQuery(
+            query=
+            """
+            SELECT customers.CUST_TIER_CODE AS cust_tier_code, product_views.SKU AS sku, COUNT(DISTINCT(product_views.EVENT_TM)) AS total_no_of_product_views
+            FROM `york-cdf-start.final_input_data.customers` AS customers
+            JOIN `york-cdf-start.final_input_data.product_views` AS product_views ON (customers.CUSTOMER_ID = product_views.CUSTOMER_ID)
+            GROUP BY customers.CUST_TIER_CODE, product_views.SKU
+            """,
+            use_standard_sql=True
+        )
 
         data2 = pipeline | "ReadFromBigQuery2" >> beam.io.ReadFromBigQuery(
             query=
@@ -65,17 +65,19 @@ def run():
             use_standard_sql=True
         )
 
-        # data1 | "Write" >> beam.io.WriteToBigQuery(
-        #     views_table,
-        #     schema=views_schema,
-        #     create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
-        #     custom_gcs_temp_location="gs://york_temp_files/tmp"
-        # )
+        data1 | "Write" >> beam.io.WriteToBigQuery(
+            views_table,
+            schema=views_schema,
+            create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
+            write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
+            custom_gcs_temp_location="gs://york_temp_files/tmp"
+        )
 
-        data2 | "Write" >> beam.io.WriteToBigQuery(
+        data2 | "Write2" >> beam.io.WriteToBigQuery(
             sales_table,
             schema=sales_schema,
             create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
+            write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
             custom_gcs_temp_location="gs://york_temp_files/tmp"
         )
 
